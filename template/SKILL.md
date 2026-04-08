@@ -1,10 +1,11 @@
 ---
 name: skill-name-in-kebab-case
-description: "One sentence describing what this skill does. WHEN: list the user phrases or task patterns that should trigger it. DO NOT USE WHEN: list the cases where Claude should skip this skill and use something else."
+description: "One sentence describing what this skill does. WHEN: list the user phrases or task patterns that should trigger it. DO NOT USE WHEN: list the cases where Claude should skip this skill and use something else. (For READ-tier skills, include the literal phrase READ-ONLY here.)"
 license: MIT
 metadata:
   author: your-name
   version: "1.0.0"
+  tier: read   # or write, or demo — must match the parent skills/<tier>/ folder
 ---
 
 # Skill Title

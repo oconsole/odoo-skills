@@ -5,6 +5,7 @@ license: MIT
 metadata:
   author: OdooCLI
   version: "1.0.0"
+  tier: write
 ---
 
 # Odoo Model Customization

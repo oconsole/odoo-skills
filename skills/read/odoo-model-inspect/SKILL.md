@@ -170,3 +170,18 @@ When you've finished an inspection, present results in the format that matches t
 - **Comparison** → side-by-side table
 
 Highlight anything surprising — broken references, unusual states, mismatches between related models.
+
+---
+
+## Common Pitfalls (auto-curated by RL)
+
+_Maintained automatically by the SkillRL self-edit loop. Each bullet is a prescriptive rule learned from a real failed episode._
+
+<!-- AUTO-CURATED-START -->
+- NEVER use `numbercall` on `ir.cron`; use `nextcall` and `state` to identify stuck scheduled actions instead.
+- ALWAYS use `installed_version` on `ir.module.module`; NEVER use `version` (Invalid field).
+- WHEN querying date ranges on `ir.logging`, use `fields.Datetime.now()` in Python context, not `now()` in domain expressions.
+- NEVER filter on `ir.module.module.dependency.state`; it is not stored and cannot be queried directly.
+- WHEN checking module dependencies, query `ir.module.module.dependency` separately, not as a nested field filter.
+- NEVER pass list values directly in domain filters; wrap multi-value conditions in proper OR/AND tuples.
+<!-- AUTO-CURATED-END -->

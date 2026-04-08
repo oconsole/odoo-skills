@@ -1,5 +1,7 @@
 # Safety Boundary: Runtime-Safe vs Module-Required
 
+> **Verified on Odoo 18.0 and Odoo 19.0.** The runtime-safe and module-required boundaries below apply identically to both versions — no model-customization operations were added or removed between 18 and 19. The only schema additions on `ir.model` in 19 (`abstract`, `fold_name`) are read-only and don't change what you can or can't customize at runtime.
+
 ## Runtime-Safe Operations (via RPC — no module needed)
 
 | What | How | Model |

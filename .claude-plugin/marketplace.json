@@ -1,0 +1,24 @@
+{
+  "name": "odoo-skills",
+  "owner": {
+    "name": "oconsole",
+    "url": "https://github.com/oconsole"
+  },
+  "metadata": {
+    "description": "Claude Code skills for working with Odoo — runtime model customization, ORM queries, view inheritance, and more. Skills are produced by an RL pipeline that distills successful agent trajectories on real Odoo tasks.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "odoo-skills",
+      "source": ".",
+      "description": "Bundle of all Odoo skills in this repo.",
+      "version": "0.1.0",
+      "category": "development",
+      "tags": ["odoo", "erp", "skills", "rl"],
+      "skills": [
+        "./skills/odoo-model-customize"
+      ]
+    }
+  ]
+}

@@ -10,7 +10,40 @@ This repo is organized into three tiers so installs are isolated by capability:
 
 When in doubt, choose the **most restrictive tier** that still does the job. A `read` tier skill is always preferable to a `write` tier skill if both can answer the user's question.
 
-## Adding a new skill
+## Where skills come from
+
+This registry is fed by two channels:
+
+1. **Hand-authored skills** — written directly under `skills/<tier>/<name>/`. The read tier (`odoo-model-inspect`) and demo tier (`odoo-model-customize-demo`) skills currently come from this channel.
+2. **RL-graduated skills** — produced by [SkillRL for OdooCLI](https://github.com/Mazzz-zzz/skill_rl). These live in `skill_rl/skills/<name>/` and are promoted into this registry via `tools/sync-from-rl.py`. Each promoted skill needs an entry in `sync-config.json` mapping its source folder to a target tier.
+
+### Promoting an RL skill into this registry
+
+```bash
+# 1. Add an entry to sync-config.json mapping the source folder to a tier
+#    e.g. {"odoo-new-skill": {"tier": "write", "target_name": "odoo-new-skill"}}
+
+# 2. Dry-run the sync to see what would change
+python3 tools/sync-from-rl.py
+
+# 3. Apply
+python3 tools/sync-from-rl.py --apply
+
+# 4. Validate, commit, push
+bash tools/validate-skills.sh
+git add -A && git commit -m "feat: promote odoo-new-skill from RL"
+git push
+```
+
+The sync script:
+- Copies `SKILL.md` and `references/*.md` from skill_rl into the target tier folder
+- Injects `metadata.tier: <tier>` into the frontmatter if missing
+- Adds the skill path to the matching plugin's `skills` array in `marketplace.json`
+- Runs `validate-skills.sh` after applying
+
+The RL pipeline can also call the sync automatically after each generation by passing `--sync-after-evolve` to `skill_rl/run.py`. This makes the registry self-updating during long training runs.
+
+## Adding a new skill (hand-authored)
 
 1. **Pick the tier.** Read, write, or demo.
 2. **Create the folder.** Use kebab-case under the right tier:

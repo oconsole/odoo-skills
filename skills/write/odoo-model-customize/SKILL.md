@@ -4,8 +4,8 @@ description: "Customize Odoo models at runtime without custom modules. Set field
 license: MIT
 metadata:
   author: OdooCLI
-  version: "1.0.0"
   tier: write
+  version: "1.0.0"
 ---
 
 # Odoo Model Customization

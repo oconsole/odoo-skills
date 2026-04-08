@@ -1,13 +1,4 @@
 {
-  "_comment": "Maps RL-graduated skills (skill_rl/skills/<name>) to their published tier in odoo-skills/skills/<tier>/<target_name>. Skills NOT listed here are NOT synced — hand-authored skills like read/odoo-model-inspect and demo/odoo-model-customize-demo stay untouched. To promote a new RL skill, add an entry below and run tools/sync-from-rl.py --apply.",
-  "source_repo": "/home/ec2-user/skill_rl",
-  "source_skills_dir": "skills",
-  "mappings": {
-    "odoo-model-customize": {
-      "tier": "write",
-      "target_name": "odoo-model-customize",
-      "auto_sync": true,
-      "notes": "First skill graduated from SkillRL. Lives in write tier because it mutates production records."
-    }
-  }
+  "_comment": "Path-based sync — skill_rl/skills/{read,write,demo}/<name>/ mirrors directly to odoo-skills/skills/{read,write,demo}/<name>/. Tier is implicit from the source path, so no name-to-tier mapping is needed. Skills that exist only in odoo-skills (not in skill_rl) are LEFT ALONE — that's the channel for hand-authored skills not managed by RL.",
+  "source_repo": "/home/ec2-user/skill_rl"
 }

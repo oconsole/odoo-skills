@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""sync-from-rl.py — sync graduated RL skills from skill_rl into odoo-skills.
+"""sync-from-rl.py — mirror skill_rl/skills/{read,write,demo}/* into odoo-skills.
 
-Reads sync-config.json, walks the source skill folder, and for every mapped
-skill copies SKILL.md and references/ into the configured tier directory.
-Injects metadata.tier into frontmatter if missing. Updates marketplace.json
-so each skill is registered under exactly one plugin. Runs the validator
-at the end.
+Both repos use the same nested layout, so the sync is a straight 1:1 mirror —
+no name-to-tier mapping is needed. Tier is implicit from the source path:
+
+    skill_rl/skills/<tier>/<name>/    →    odoo-skills/skills/<tier>/<name>/
+
+Skills that exist only in odoo-skills (not in skill_rl) are LEFT ALONE — that's
+the channel for hand-authored skills that aren't RL-managed.
+
+Skills that exist only in skill_rl are reported as new and copied across.
+The validator runs at the end to enforce frontmatter and tier rules.
 
 Usage:
     # Show what would change (default: dry run)
@@ -32,7 +37,6 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -41,7 +45,7 @@ SKILLS_DIR = REPO_ROOT / "skills"
 MARKETPLACE_PATH = REPO_ROOT / ".claude-plugin" / "marketplace.json"
 VALIDATOR_PATH = REPO_ROOT / "tools" / "validate-skills.sh"
 
-VALID_TIERS = {"read", "write", "demo"}
+VALID_TIERS = ("read", "write", "demo")
 PLUGIN_BY_TIER = {
     "read": "odoo-skills-read",
     "write": "odoo-skills-write",
@@ -51,11 +55,11 @@ PLUGIN_BY_TIER = {
 
 @dataclass
 class SyncReport:
-    new_in_source: list[str] = field(default_factory=list)        # found in source, no mapping
-    missing_source: list[str] = field(default_factory=list)       # mapping points at nonexistent source
+    new_skills: list[str] = field(default_factory=list)        # in source, never seen in dest before
     files_added: list[str] = field(default_factory=list)
     files_updated: list[str] = field(default_factory=list)
     files_unchanged: list[str] = field(default_factory=list)
+    skipped_dest_only: list[str] = field(default_factory=list)  # in dest only — left alone
     marketplace_updated: bool = False
     errors: list[str] = field(default_factory=list)
 
@@ -64,16 +68,12 @@ class SyncReport:
 
 
 def load_config() -> dict:
-    if not CONFIG_PATH.exists():
-        sys.exit(f"ERROR: {CONFIG_PATH} not found")
-    with CONFIG_PATH.open() as f:
-        return json.load(f)
-
-
-def discover_source_skills(source_skills_dir: Path) -> list[str]:
-    if not source_skills_dir.is_dir():
-        sys.exit(f"ERROR: source skills dir {source_skills_dir} does not exist")
-    return sorted(p.name for p in source_skills_dir.iterdir() if p.is_dir())
+    """Load optional sync-config.json. Currently only used for `source_repo`
+    default — the rest is path-driven."""
+    if CONFIG_PATH.exists():
+        with CONFIG_PATH.open() as f:
+            return json.load(f)
+    return {"source_repo": "/home/ec2-user/skill_rl"}
 
 
 def inject_tier(content: str, tier: str) -> tuple[str, bool]:
@@ -83,12 +83,10 @@ def inject_tier(content: str, tier: str) -> tuple[str, bool]:
     """
     fm_match = re.match(r"^---\n(.*?)\n---\n", content, re.DOTALL)
     if not fm_match:
-        # No frontmatter — leave content unchanged and surface the problem.
         return content, False
 
     frontmatter = fm_match.group(1)
     if re.search(r"^  tier:\s*\S+", frontmatter, re.MULTILINE):
-        # Already has metadata.tier; replace if different.
         new_fm = re.sub(
             r"^  tier:.*$",
             f"  tier: {tier}",
@@ -101,7 +99,6 @@ def inject_tier(content: str, tier: str) -> tuple[str, bool]:
         return content.replace(frontmatter, new_fm, 1), True
 
     if re.search(r"^metadata:\s*$", frontmatter, re.MULTILINE):
-        # Has metadata block but no tier key — append it.
         new_fm = re.sub(
             r"(^metadata:\s*$\n(?:  \w+:.*\n)*)",
             lambda m: m.group(1) + f"  tier: {tier}\n",
@@ -113,7 +110,6 @@ def inject_tier(content: str, tier: str) -> tuple[str, bool]:
             new_fm = frontmatter + f"\n  tier: {tier}"
         return content.replace(frontmatter, new_fm, 1), True
 
-    # No metadata block at all — add one.
     new_fm = frontmatter.rstrip() + f"\nmetadata:\n  tier: {tier}\n"
     return content.replace(frontmatter, new_fm, 1), True
 
@@ -125,24 +121,25 @@ def sync_skill(
     apply: bool,
     report: SyncReport,
 ) -> None:
-    """Copy source_dir/SKILL.md and references/ → target_dir, injecting tier."""
-    if not source_dir.is_dir():
-        report.missing_source.append(str(source_dir))
-        return
+    """Mirror source_dir → target_dir, injecting metadata.tier into SKILL.md."""
+    is_new_skill = not target_dir.exists()
+    if is_new_skill:
+        report.new_skills.append(f"{tier}/{source_dir.name}")
 
-    target_dir.mkdir(parents=True, exist_ok=True)
+    if apply:
+        target_dir.mkdir(parents=True, exist_ok=True)
 
     # SKILL.md
     src_md = source_dir / "SKILL.md"
-    dst_md = target_dir / "SKILL.md"
     if not src_md.exists():
         report.errors.append(f"{source_dir} has no SKILL.md")
         return
 
+    dst_md = target_dir / "SKILL.md"
     src_content = src_md.read_text()
     new_content, _ = inject_tier(src_content, tier)
+    rel = dst_md.relative_to(REPO_ROOT) if apply or dst_md.exists() else Path(f"skills/{tier}/{source_dir.name}/SKILL.md")
 
-    rel = dst_md.relative_to(REPO_ROOT)
     if dst_md.exists():
         if dst_md.read_text() == new_content:
             report.files_unchanged.append(str(rel))
@@ -159,10 +156,11 @@ def sync_skill(
     src_refs = source_dir / "references"
     dst_refs = target_dir / "references"
     if src_refs.is_dir():
-        dst_refs.mkdir(exist_ok=True)
+        if apply:
+            dst_refs.mkdir(exist_ok=True)
         for ref_file in sorted(src_refs.glob("*.md")):
             dst_file = dst_refs / ref_file.name
-            rel_ref = dst_file.relative_to(REPO_ROOT)
+            rel_ref = dst_file.relative_to(REPO_ROOT) if apply or dst_file.exists() else Path(f"skills/{tier}/{source_dir.name}/references/{ref_file.name}")
             if dst_file.exists() and filecmp.cmp(ref_file, dst_file, shallow=False):
                 report.files_unchanged.append(str(rel_ref))
                 continue
@@ -174,7 +172,8 @@ def sync_skill(
                 shutil.copy2(ref_file, dst_file)
 
 
-def update_marketplace(config: dict, apply: bool, report: SyncReport) -> None:
+def update_marketplace(synced_skills: list[tuple[str, str]], apply: bool, report: SyncReport) -> None:
+    """Ensure each (tier, name) pair is registered in the matching plugin."""
     if not MARKETPLACE_PATH.exists():
         report.errors.append(f"{MARKETPLACE_PATH} not found")
         return
@@ -185,17 +184,15 @@ def update_marketplace(config: dict, apply: bool, report: SyncReport) -> None:
     plugins = {p["name"]: p for p in marketplace.get("plugins", [])}
     changed = False
 
-    for source_name, mapping in config["mappings"].items():
-        tier = mapping["tier"]
-        target_name = mapping.get("target_name", source_name)
+    for tier, name in synced_skills:
         plugin_name = PLUGIN_BY_TIER.get(tier)
         if plugin_name is None:
-            report.errors.append(f"unknown tier '{tier}' for source '{source_name}'")
+            report.errors.append(f"unknown tier '{tier}' for skill '{name}'")
             continue
         if plugin_name not in plugins:
             report.errors.append(f"plugin '{plugin_name}' missing from marketplace.json")
             continue
-        rel_skill_path = f"./skills/{tier}/{target_name}"
+        rel_skill_path = f"./skills/{tier}/{name}"
         skills_list = plugins[plugin_name].setdefault("skills", [])
         if rel_skill_path not in skills_list:
             skills_list.append(rel_skill_path)
@@ -233,10 +230,11 @@ def git_commit(report: SyncReport) -> None:
         return
     subprocess.run(["git", "add", "--"] + paths, cwd=REPO_ROOT, check=True)
     msg = (
-        "chore: sync RL-graduated skills from skill_rl\n\n"
-        "Auto-synced via tools/sync-from-rl.py.\n\n"
+        "chore: sync skills from skill_rl\n\n"
+        "Auto-mirrored via tools/sync-from-rl.py.\n\n"
         f"Added: {len(report.files_added)} files\n"
         f"Updated: {len(report.files_updated)} files\n"
+        f"New skills: {len(report.new_skills)}\n"
         f"Marketplace updated: {report.marketplace_updated}\n\n"
         "Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>\n"
     )
@@ -253,49 +251,63 @@ def print_report(report: SyncReport, apply: bool) -> None:
             for item in items:
                 print(f"  - {item}")
 
+    section("New skills (created in registry)", report.new_skills)
     section("Files added", report.files_added)
     section("Files updated", report.files_updated)
     section("Files unchanged", report.files_unchanged)
-    section("New in source (need a mapping in sync-config.json)", report.new_in_source)
-    section("Missing source paths", report.missing_source)
+    section("Skipped (dest-only — left alone)", report.skipped_dest_only)
     section("Errors", report.errors)
     print(f"\nMarketplace updated: {report.marketplace_updated}")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--apply", action="store_true", help="Actually copy files (default: dry run)")
     parser.add_argument("--commit", action="store_true", help="git add + commit changes (implies --apply)")
-    parser.add_argument("--source-repo", help="Override source_repo from sync-config.json")
+    parser.add_argument("--source-repo", help="Override source repo path (default: from sync-config.json or /home/ec2-user/skill_rl)")
     args = parser.parse_args()
 
     if args.commit:
         args.apply = True
 
     config = load_config()
-    source_repo = Path(args.source_repo or config["source_repo"])
-    source_skills_dir = source_repo / config.get("source_skills_dir", "skills")
+    source_repo = Path(args.source_repo or config.get("source_repo", "/home/ec2-user/skill_rl"))
+    source_skills_dir = source_repo / "skills"
+
+    if not source_skills_dir.is_dir():
+        sys.exit(f"ERROR: source skills dir {source_skills_dir} does not exist")
 
     report = SyncReport()
+    synced_skills: list[tuple[str, str]] = []
 
-    found_sources = discover_source_skills(source_skills_dir)
-    mappings = config.get("mappings", {})
+    # Walk source: skills/{read,write,demo}/<name>/
+    for tier in VALID_TIERS:
+        src_tier_dir = source_skills_dir / tier
+        dst_tier_dir = SKILLS_DIR / tier
 
-    for src_name in found_sources:
-        if src_name not in mappings:
-            report.new_in_source.append(src_name)
-
-    for src_name, mapping in mappings.items():
-        tier = mapping["tier"]
-        if tier not in VALID_TIERS:
-            report.errors.append(f"{src_name}: invalid tier '{tier}'")
+        if not src_tier_dir.is_dir():
             continue
-        target_name = mapping.get("target_name", src_name)
-        target_dir = SKILLS_DIR / tier / target_name
-        source_dir = source_skills_dir / src_name
-        sync_skill(source_dir, target_dir, tier, args.apply, report)
 
-    update_marketplace(config, args.apply, report)
+        for source_dir in sorted(p for p in src_tier_dir.iterdir() if p.is_dir()):
+            target_dir = dst_tier_dir / source_dir.name
+            sync_skill(source_dir, target_dir, tier, args.apply, report)
+            synced_skills.append((tier, source_dir.name))
+
+    # Detect dest-only skills (hand-authored, leave them alone)
+    for tier in VALID_TIERS:
+        dst_tier_dir = SKILLS_DIR / tier
+        src_tier_dir = source_skills_dir / tier
+        if not dst_tier_dir.is_dir():
+            continue
+        for dst_skill in sorted(p for p in dst_tier_dir.iterdir() if p.is_dir()):
+            src_equiv = src_tier_dir / dst_skill.name
+            if not src_equiv.exists():
+                report.skipped_dest_only.append(f"{tier}/{dst_skill.name}")
+
+    update_marketplace(synced_skills, args.apply, report)
     print_report(report, args.apply)
 
     if args.apply:
@@ -312,9 +324,6 @@ def main() -> int:
 
     if report.errors:
         return 1
-    if report.new_in_source and not args.apply:
-        # Surface unmapped skills as a warning, not an error, on dry runs.
-        pass
     return 0
 
 

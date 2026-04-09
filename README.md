@@ -71,6 +71,31 @@ All skills are verified on **Odoo 18.0** and **Odoo 19.0**. Each skill's `SKILL.
 
 ---
 
+## Validated effectiveness
+
+Each `SKILL.md` carries an auto-curated **Common Pitfalls** section maintained by the [SkillRL self-edit loop](https://github.com/oconsole/odoo-skills-rl). The bullets are produced from real failed agent episodes, verified against live Odoo (positive field-name claims must exist on the named model), and pruned by a cold-start validation harness.
+
+A fresh agent loading only `SKILL.md` (no skill bank, no RL training) was measured against the same agent with no skill content on **18 held-out tasks** that the curation has never seen. Tasks were split across both tiers and probed specific bullet classes (`installed_version` vs `version`, `move_type` vs `type`, CRM-uninstalled fallback, MRP date-field naming, ir.default schema, etc.).
+
+| Tier | Tasks | Mean Odoo errors (baseline → with SKILL.md) | Mean tool calls | Delta |
+|---|---|---|---|---|
+| **Read** | 12 | **0.92 → 0.25** | 2.75 → 2.50 | **−73% errors** |
+| **Write** | 6 | **1.00 → 0.33** | 5.83 → 4.17 | **−67% errors, −29% tools** |
+| **Combined** | 18 | **0.94 → 0.28** | 3.78 → 3.06 | **−70% errors** |
+
+Completion rate stayed at 100% in both modes — the skill doesn't help the agent finish more tasks, it helps it finish them with fewer wrong tool calls. Reproduce locally:
+
+```bash
+git clone https://github.com/oconsole/odoo-skills-rl
+cd odoo-skills-rl
+python3 scripts/validate_cold_start.py            # both tiers, side-by-side report
+python3 scripts/validate_cold_start.py --tier read --jsonl out.jsonl
+```
+
+The harness also actively prunes the curation: any bullet that the with-skill agent followed and made things *worse* gets retired. This is how we caught and removed the over-conservative `qty_available` and `stock.quant.qty_available` bullets — the validator proved they were misleading by running the agent both ways.
+
+---
+
 ## Repo layout
 
 ```

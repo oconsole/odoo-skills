@@ -4,7 +4,7 @@ Agent skills for working with Odoo via [Claude Code](https://docs.claude.com/en/
 
 These skills are produced by an RL pipeline ([SkillRL for OdooCLI](https://github.com/oconsole/odoo-skills-rl)) that distills successful agent trajectories on real Odoo tasks into reusable skill bundles.
 
-<video src="https://odoocli.com/odoo-skills.mp4" width="100%" controls poster="https://odoocli.com/odoo-skills-poster.jpg"></video>
+![Odoo Skills Overview](odoo-skills.gif)
 
 ---
 

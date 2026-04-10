@@ -3,8 +3,9 @@ name: odoo-model-customize
 description: "Customize Odoo models at runtime without custom modules. Set field defaults via ir.default, change list sort order via window actions, create saved filters, add custom x_ fields, create inherited views with XPath, and set up automated actions. WHEN: change default value, set default, sort order, reorder list, default filter, add custom field, customize form, add field to view, change dropdown order, groupby default, saved filter, automated action. DO NOT USE WHEN: override Python methods, change _order class attribute, add stored computed fields, modify core field constraints — those require a custom module."
 license: MIT
 metadata:
-  author: OdooCLI
+  author: oconsole
   version: "1.0.0"
+  tier: write
 ---
 
 # Odoo Model Customization

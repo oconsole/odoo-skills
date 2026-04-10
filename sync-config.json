@@ -1,4 +1,0 @@
-{
-  "_comment": "Path-based sync — skill_rl/skills/{read,write,demo}/<name>/ mirrors directly to odoo-skills/skills/{read,write,demo}/<name>/. Tier is implicit from the source path, so no name-to-tier mapping is needed. Skills that exist only in odoo-skills (not in skill_rl) are LEFT ALONE — that's the channel for hand-authored skills not managed by RL.",
-  "source_repo": "/home/ec2-user/skill_rl"
-}

@@ -17,7 +17,11 @@
       "category": "development",
       "tags": ["odoo", "erp", "read-only", "audit", "inspect", "safe"],
       "skills": [
-        "./skills/read/odoo-model-inspect"
+        "./skills/read/odoo-accounting-inspect",
+        "./skills/read/odoo-model-inspect",
+        "./skills/read/odoo-mrp-inspect",
+        "./skills/read/odoo-stock-inspect",
+        "./skills/read/odoo-system-inspect"
       ]
     },
     {

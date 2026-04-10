@@ -50,9 +50,11 @@ npx skills add oconsole/odoo-skills/odoo-model-inspect
 
 | Tier | What it can do | Where it's safe |
 |---|---|---|
-| **Read** | Inspect models, query records, count, audit, run health checks. **No mutating tools.** | Production, staging, demo — anywhere. |
+| **Read** | Inspect models, query records, count, audit, run health checks. Guides agent toward read-only operations. | Production, staging, demo — anywhere. |
 | **Write** | Set defaults, create custom fields, modify window actions, build automations. **Mutates state.** | Production only when you want changes. |
 | **Demo** | Same as write, but every artifact is tagged for clean rollback. | Sandbox, demo, training instances. |
+
+> **Skills are guidance, not enforcement.** A read-tier skill instructs the agent to use only read operations, but it cannot prevent the agent from calling write tools if they are available. Skills are the guidance layer. If you need hard enforcement, configure your MCP server in read-only mode. The MCP server is the enforcement layer.
 
 ---
 

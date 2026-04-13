@@ -1,0 +1,35 @@
+{
+  "name": "odoo-skills",
+  "owner": {
+    "name": "oconsole"
+  },
+  "metadata": {
+    "description": "Agent skills for inspecting and customizing Odoo ERP instances via MCP",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "odoo-inspect",
+      "description": "Read-only inspection skills for Odoo models, accounting, manufacturing, inventory, and system health",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./odoo-model-inspect",
+        "./odoo-accounting-inspect",
+        "./odoo-mrp-inspect",
+        "./odoo-stock-inspect",
+        "./odoo-system-inspect"
+      ]
+    },
+    {
+      "name": "odoo-customize",
+      "description": "Runtime model customization skills for Odoo — custom fields, views, defaults, filters, and automated actions",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./odoo-model-customize",
+        "./odoo-model-customize-demo"
+      ]
+    }
+  ]
+}

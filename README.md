@@ -1,8 +1,8 @@
 # Odoo Skills
 
-Agent skills for working with Odoo via [Claude Code](https://docs.claude.com/en/docs/claude-code/skills), organized into **three tiers** so the agent only has the capabilities you've explicitly granted.
+Companion agent skills for Odoo MCP clients, organized into read, write and demo tiers. Skills guide behavior; OAuth scopes and Odoo permissions enforce access.
 
-These skills are produced by an RL pipeline ([SkillRL for OdooCLI](https://github.com/oconsole/odoo-skills-rl)) that distills successful agent trajectories on real Odoo tasks into reusable skill bundles.
+Version 1.1 adds account connection selection and everyday record work. Domain recipes inherited from [SkillRL for OdooCLI](https://github.com/oconsole/odoo-skills-rl) remain available as optional references.
 
 ![Odoo Skills Overview](odoo-skills.gif)
 
@@ -22,6 +22,14 @@ npx skills add oconsole/odoo-skills/odoo-model-inspect
 
 ---
 
+## Account connections and efficient loading
+
+For hosted OConsole, connect once at `https://mcp.odooconsole.com/mcp` and choose **Connect my account**. Skills use `get_context`, retain the active instance per connection, and require `context_version` for default-target writes. Explicit overrides and fixed-instance/local connectors remain supported. A stale version requires re-reading the target records, not just replacing the version.
+
+Load the entrypoint for the current task; load only relevant references. Independent single-skill installs contain their own connection rules and references. Instance management is separate from everyday record work and from developer configuration. Recipes/examples in references inherit the entrypoint's current connection rules; trust live tool schemas over older examples.
+
+The marketplace keeps `odoo-inspect` and `odoo-customize`, and adds `odoo-work` and `odoo-account`; their skill lists stay separate. Updating the hosted MCP server does not update a client's downloaded skills. Reinstall/update the package in that client to obtain v1.1.
+
 ## Skills
 
 ### Read (inspect-only, safe on production)
@@ -38,6 +46,8 @@ npx skills add oconsole/odoo-skills/odoo-model-inspect
 
 | Skill | Purpose |
 |---|---|
+| [`odoo-record-work`](odoo-record-work/) | Everyday contacts, sales and task queries and authorized record changes. |
+| [`odoo-instance-manage`](odoo-instance-manage/) | Account selection, instance lifecycle, app presets and demo data. |
 | [`odoo-model-customize`](odoo-model-customize/) | Runtime-safe customization: defaults, sort order, custom fields, inherited views, automated actions. Knows the boundary between runtime-modifiable and module-required changes. |
 
 ### Demo (sandboxed mutations)
@@ -62,13 +72,13 @@ npx skills add oconsole/odoo-skills/odoo-model-inspect
 
 ## Compatibility
 
-All skills are verified on **Odoo 18.0** and **Odoo 19.0**. Each `SKILL.md` includes per-version compatibility tables for field name differences.
+The inherited domain recipes contain Odoo 18/19 compatibility notes; they have not all been revalidated live for this release. Hosted instance creation currently offers Odoo 19. Use discovered capabilities for fixed-instance/local servers, which may not have account tools.
 
 ---
 
-## Validated effectiveness
+## Historical RL results
 
-Each `SKILL.md` carries an auto-curated **Common Pitfalls** section maintained by the [SkillRL self-edit loop](https://github.com/oconsole/odoo-skills-rl). Bullets are produced from real failed agent episodes and verified against live Odoo.
+These are previously reported RL results, not measurements of v1.1 or of the new connection flow. The inherited pitfalls now live in optional guides. The training snapshots in the RL repository remain unchanged. Structure/token checks for v1.1 do not establish model task-success rates.
 
 | Tier | Tasks | Odoo errors (baseline → with skill) | Tool calls | Delta |
 |---|---|---|---|---|
@@ -95,9 +105,11 @@ odoo-skills/
 ├── odoo-mrp-inspect/            # read — manufacturing, BoMs
 ├── odoo-stock-inspect/          # read — inventory, stock levels
 ├── odoo-system-inspect/         # read — modules, cron, logs
+├── odoo-record-work/           # write — everyday operations
+├── odoo-instance-manage/       # write — hosted account and lifecycle
 ├── odoo-model-customize/        # write — runtime customization
 ├── odoo-model-customize-demo/   # demo — sandboxed customization
-├── template/SKILL.md            # starter for new skills
+├── template/SKILL.template.md            # starter for new skills
 ├── tools/validate-skills.sh     # linter
 ├── CONTRIBUTING.md
 └── LICENSE

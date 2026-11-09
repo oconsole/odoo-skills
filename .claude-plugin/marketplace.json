@@ -4,8 +4,8 @@
     "name": "oconsole"
   },
   "metadata": {
-    "description": "Agent skills for inspecting and customizing Odoo ERP instances via MCP",
-    "version": "1.0.0"
+    "description": "Odoo inspection, everyday record work, runtime configuration and hosted instance management via MCP",
+    "version": "1.1.0"
   },
   "plugins": [
     {
@@ -23,12 +23,30 @@
     },
     {
       "name": "odoo-customize",
-      "description": "Runtime model customization skills for Odoo — custom fields, views, defaults, filters, and automated actions",
+      "description": "Runtime model customization skills for Odoo \u2014 custom fields, views, defaults, filters, and automated actions",
       "source": "./",
       "strict": false,
       "skills": [
         "./odoo-model-customize",
         "./odoo-model-customize-demo"
+      ]
+    },
+    {
+      "name": "odoo-work",
+      "description": "Everyday business record queries and authorized updates",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./odoo-record-work"
+      ]
+    },
+    {
+      "name": "odoo-account",
+      "description": "Hosted OConsole connection selection, instance lifecycle, app presets and demo setup",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./odoo-instance-manage"
       ]
     }
   ]

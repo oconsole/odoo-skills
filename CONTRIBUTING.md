@@ -14,7 +14,7 @@ When in doubt, choose the **most restrictive tier** that still does the job.
 
 1. **Pick the tier.** Read, write, or demo.
 2. **Create a folder at the repo root** using kebab-case: `<skill-name>/`
-3. **Copy `template/SKILL.md`** as a starting point.
+3. **Copy `template/SKILL.template.md`** as a starting point.
 4. **Fill in the frontmatter.** Required: `name`, `description`. Required for this repo: `metadata.tier` set to `read`, `write`, or `demo`. The `name` field must match the folder name.
 5. **Author SKILL.md per-tier rules** (see below).
 6. **Add references** under `<your-skill>/references/` if your skill has more than ~200 lines of guidance.
@@ -78,3 +78,11 @@ metadata:                             # required for this repo
   tier: read                          # required: read | write | demo
 ---
 ```
+
+## Hosted MCP guidance
+
+Keep `SKILL.md` small and self-contained for single-skill installation. Account routing, stale-write recovery and authorization boundaries belong in the entrypoint; long domain recipes belong in linked references. Read only references relevant to the task. Preserve fixed-instance/local compatibility by checking the advertised tool schema.
+
+Read skills never perform ERP mutations. The account skill changes connection preferences and manages instance lifecycle; the record-work skill changes business records. They are write-tier skills, with discovery and same-target verification, rather than model-customization recipes.
+
+Update marketplace skill lists when adding a skill. Do not expand the inspect plugin with write skills. Historical RL results are not new release validation.

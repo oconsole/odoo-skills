@@ -20,6 +20,10 @@ Activate this skill when the user wants to:
 
 > **Scope**: What this skill covers and what it explicitly does not cover.
 
+## Connection and target
+
+For account MCP, use the current `get_context` selection, allow a one-call explicit override, and require `context_version` for default-target writes. A stale version requires re-checking target and record IDs. For fixed/local MCP, use only advertised parameters. Skills do not broaden authorization.
+
 ## Rules
 
 1. **Always start with discovery** — gather state before mutating
